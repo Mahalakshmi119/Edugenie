@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EduGenie | AI Learning Assistant</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+
+<body>
+
+    <div class="page">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">EduGenie</div>
+
+            <h1>AI Learning Assistant</h1>
+
+            <p>
+                Your intelligent companion for learning,
+                understanding and revision.
+            </p>
+        </header>
+
+
+        <!-- Main Content -->
+        <main class="main-card">
+
+            <div class="intro">
+                <h2>What would you like to learn?</h2>
+
+                <p>
+                    Select a task and enter your question or
+                    learning content below.
+                </p>
+            </div>
+
+
+            <!-- Form -->
+            <form id="learningForm">
+
+                <!-- Task -->
+                <div class="form-group">
+
+                    <label for="task">
+                        Select Task
+                    </label>
+
+                    <select id="task">
+
+                        <option value="qa">
+                            Ask a Question
+                        </option>
+
+                        <option value="explain">
+                            Explain a Topic
+                        </option>
+
+                        <option value="quiz">
+                            Generate Quiz
+                        </option>
+
+                        <option value="summarize">
+                            Summarize
+                        </option>
+
+                        <option value="recommend">
+                            Recommend Learning Path
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Input -->
+                <div class="form-group">
+
+                    <label for="inputText">
+                        Enter your question or content
+                    </label>
+
+                    <textarea
+                        id="inputText"
+                        placeholder="Example: Explain Artificial Intelligence in simple words..."
+                        required></textarea>
+
+                </div>
+
+
+                <!-- Button -->
+                <button
+                    type="submit"
+                    id="submitButton">
+
+                    Generate
+
+                </button>
+
+            </form>
+
+
+            <!-- Loading -->
+            <div
+                id="loading"
+                class="loading"
+                style="display: none;">
+
+                <div class="loader"></div>
+
+                <span>EduGenie is thinking...</span>
+
+            </div>
+
+
+            <!-- Result -->
+            <section class="result-section">
+
+                <div class="result-title">
+                    <h2>Result</h2>
+                </div>
+
+                <div id="result" class="result-box">
+
+                    <p class="placeholder">
+                        Your answer will appear here.
+                    </p>
+
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <!-- Footer -->
+        <footer class="footer">
+
+            <p>
+                EduGenie • Google Gemini Powered Learning Assistant
+            </p>
+
+        </footer>
+
+    </div>
+
+
+    <script>
+
+        const form =
+            document.getElementById("learningForm");
+
+        const task =
+            document.getElementById("task");
+
+        const inputText =
+            document.getElementById("inputText");
+
+        const result =
+            document.getElementById("result");
+
+        const loading =
+            document.getElementById("loading");
+
+        const submitButton =
+            document.getElementById("submitButton");
+
+
+        form.addEventListener("submit", async function(event) {
+
+            event.preventDefault();
+
+            const selectedTask = task.value;
+
+            const text = inputText.value.trim();
+
+
+            if (!text) {
+
+                result.innerHTML =
+                    "<p>Please enter your question or content.</p>";
+
+                return;
+            }
+
+
+            loading.style.display = "flex";
+
+            submitButton.disabled = true;
+
+            result.innerHTML = "";
+
+
+            let endpoint = "";
+
+            let requestBody = {};
+
+
+            if (selectedTask === "qa") {
+
+                endpoint = "/qa";
+
+                requestBody = {
+                    question: text
+                };
+
+            }
+
+            else if (selectedTask === "explain") {
+
+                endpoint = "/explain";
+
+                requestBody = {
+                    text: text
+                };
+
+            }
+
+            else if (selectedTask === "quiz") {
+
+                endpoint = "/quiz";
+
+                requestBody = {
+                    text: text
+                };
+
+            }
+
+            else if (selectedTask === "summarize") {
+
+                endpoint = "/summarize";
+
+                requestBody = {
+                    text: text
+                };
+
+            }
+
+            else if (selectedTask === "recommend") {
+
+                endpoint = "/learn/recommendations";
+
+                requestBody = {
+                    text: text
+                };
+
+            }
+
+
+            try {
+
+                const response = await fetch(
+                    endpoint,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify(requestBody)
+                    }
+                );
+
+
+                const data = await response.json();
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.detail ||
+                        "Something went wrong."
+                    );
+
+                }
+
+
+                if (selectedTask === "quiz") {
+
+                    displayQuiz(data.quiz);
+
+                }
+
+                else {
+
+                    displayText(data.result);
+
+                }
+
+            }
+
+            catch (error) {
+
+                result.innerHTML = `
+                    <div class="error">
+                        <strong>Error</strong>
+                        <p>${escapeHtml(error.message)}</p>
+                    </div>
+                `;
+
+            }
+
+            finally {
+
+                loading.style.display = "none";
+
+                submitButton.disabled = false;
+
+            }
+
+        });
+
+
+        function displayText(text) {
+
+            result.innerHTML = `
+                <div class="text-result">
+                    ${escapeHtml(text).replace(/\n/g, "<br>")}
+                </div>
+            `;
+
+        }
+
+
+        function displayQuiz(quiz) {
+
+            let html = "";
+
+
+            quiz.forEach((question, index) => {
+
+                html += `
+                    <div class="quiz-card">
+
+                        <h3>
+                            ${index + 1}.
+                            ${escapeHtml(question.question)}
+                        </h3>
+
+                        <div class="options">
+                `;
+
+
+                question.options.forEach(option => {
+
+                    html += `
+                        <div class="option">
+                            ${escapeHtml(option)}
+                        </div>
+                    `;
+
+                });
+
+
+                html += `
+                        </div>
+
+                        <div class="answer">
+                            <strong>Correct Answer:</strong>
+                            ${escapeHtml(question.correct_answer)}
+                        </div>
+
+                        <div class="explanation">
+                            <strong>Explanation:</strong>
+                            ${escapeHtml(question.explanation)}
+                        </div>
+
+                    </div>
+                `;
+
+            });
+
+
+            result.innerHTML = html;
+
+        }
+
+
+        function escapeHtml(text) {
+
+            const div =
+                document.createElement("div");
+
+            div.textContent = String(text);
+
+            return div.innerHTML;
+
+        }
+
+    </script>
+
+</body>
+
+</html>

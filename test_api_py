@@ -1,0 +1,173 @@
+from fastapi.testclient import TestClient
+
+import main
+
+
+client = TestClient(
+    main.app
+)
+
+
+def test_home():
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+
+    assert "EduGenie" in response.text
+
+
+def test_health():
+
+    response = client.get(
+        "/health"
+    )
+
+    assert response.status_code == 200
+
+    assert response.json()["status"] == "ok"
+
+
+def test_qa(monkeypatch):
+
+    monkeypatch.setattr(
+        main,
+        "answer_question",
+        lambda question:
+            "Mock answer"
+    )
+
+    response = client.post(
+        "/qa",
+        json={
+            "question":
+                "What is AI?"
+        }
+    )
+
+    assert response.status_code == 200
+
+    assert (
+        response.json()["result"]
+        == "Mock answer"
+    )
+
+
+def test_explain(monkeypatch):
+
+    monkeypatch.setattr(
+        main,
+        "explain_topic",
+        lambda text:
+            "Mock explanation"
+    )
+
+    response = client.post(
+        "/explain",
+        json={
+            "text":
+                "Machine Learning"
+        }
+    )
+
+    assert response.status_code == 200
+
+    assert (
+        response.json()["result"]
+        == "Mock explanation"
+    )
+
+
+def test_quiz(monkeypatch):
+
+    fake_quiz = [
+        {
+            "question":
+                "2 + 2 = ?",
+
+            "options": [
+                "1",
+                "2",
+                "3",
+                "4"
+            ],
+
+            "correct_answer":
+                "4",
+
+            "explanation":
+                "2 + 2 equals 4."
+        }
+    ]
+
+    monkeypatch.setattr(
+        main,
+        "generate_quiz",
+        lambda text:
+            fake_quiz
+    )
+
+    response = client.post(
+        "/quiz",
+        json={
+            "text":
+                "Basic mathematics"
+        }
+    )
+
+    assert response.status_code == 200
+
+    assert (
+        response.json()["quiz"]
+        == fake_quiz
+    )
+
+
+def test_summary(monkeypatch):
+
+    monkeypatch.setattr(
+        main,
+        "summarize_text",
+        lambda text:
+            "Mock summary"
+    )
+
+    response = client.post(
+        "/summarize",
+        json={
+            "text":
+                "Long educational content"
+        }
+    )
+
+    assert response.status_code == 200
+
+    assert (
+        response.json()["result"]
+        == "Mock summary"
+    )
+
+
+def test_learning_path(monkeypatch):
+
+    monkeypatch.setattr(
+        main,
+        "get_learning_recommendations",
+        lambda text:
+            "Mock learning path"
+    )
+
+    response = client.post(
+        "/learn/recommendations",
+        json={
+            "text":
+                "Python"
+        }
+    )
+
+    assert response.status_code == 200
+
+    assert (
+        response.json()["result"]
+        == "Mock learning path"
+    )
